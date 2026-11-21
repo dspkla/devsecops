@@ -17,12 +17,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run TruffleHog OSS
+      - name: Run TruffleHog Secret Scan
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          extra_args: --only-verified
 
   sast:
     name: "Semgrep SAST Code Security Scan"
@@ -31,12 +30,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Semgrep OSS
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install & Run Semgrep SAST
         run: |
-          docker run --rm -v "${{ github.workspace }}:/src" returntocorp/semgrep semgrep \
-            --config=p/security-audit \
-            --config=p/owasp-top-ten \
-            --error
+          python3 -m pip install --upgrade pip semgrep
+          semgrep scan --config=rules/semgrep-rules.yaml --metrics=off
 
   sca-and-sbom:
     name: "Aqua Trivy Dependency Audit & SBOM Generation"

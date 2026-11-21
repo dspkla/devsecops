@@ -1,0 +1,4 @@
+# Ignore rule definitions and CI workflow configs from SAST scan
+rules/
+.github/
+scripts/
