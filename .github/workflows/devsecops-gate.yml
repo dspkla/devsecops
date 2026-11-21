@@ -1,0 +1,59 @@
+name: "Enterprise DevSecOps Shift-Left Pipeline"
+
+on:
+  workflow_call:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  secret-scan:
+    name: "TruffleHog High-Entropy Secret Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog OSS
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+
+  sast:
+    name: "Semgrep SAST Code Security Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep OSS
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" returntocorp/semgrep semgrep \
+            --config=p/security-audit \
+            --config=p/owasp-top-ten \
+            --error
+
+  sca-and-sbom:
+    name: "Aqua Trivy Dependency Audit & SBOM Generation"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate CycloneDX SBOM with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'cyclonedx'
+          output: 'sbom.json'
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.json
