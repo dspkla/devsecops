@@ -1,0 +1,14 @@
+rules:
+  - id: hardcoded-aws-access-key
+    message: "Detected potential hardcoded AWS Access Key ID. Store credentials in AWS Secrets Manager or Vault."
+    languages: [yaml, json, python, javascript, terraform]
+    severity: ERROR
+    patterns:
+      - pattern-regex: "(?i)(AKIA[0-9A-Z]{16})"
+
+  - id: insecure-tls-protocol-version
+    message: "Insecure TLS protocol version detected. Use TLS 1.2 or higher."
+    languages: [python, javascript, terraform]
+    severity: WARNING
+    patterns:
+      - pattern-regex: "(?i)(TLSv1_0|TLSv1_1|SSLv3)"
